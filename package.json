@@ -1,0 +1,29 @@
+{
+  "name": "mcp-simplengat",
+  "version": "1.0.0",
+  "description": "MCP Server for SimpleNGAT API (simplengat.com) — image & video generation",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "mcp-simplengat": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "health": "tsx src/healthcheck.ts",
+    "health:full": "tsx src/healthcheck.ts --full",
+    "health:poll": "tsx src/healthcheck.ts --full --poll",
+    "inspect": "npx @modelcontextprotocol/inspector node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "dotenv": "^16.4.5",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.4",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.2"
+  }
+}
