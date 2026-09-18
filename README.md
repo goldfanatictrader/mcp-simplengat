@@ -79,3 +79,7 @@ Via MCP: `simplengat_health_check` (`checkVideo: true` untuk ikut cek video, `po
 
 Output: `overall: healthy | degraded | down` + `latencyMs` per cek + klasifikasi:
 `api` gagal = kemungkinan outage/maintenance; generator gagal tapi api hidup = gangguan parsial.
+
+## 7. License
+
+MIT — lihat `LICENSE`.

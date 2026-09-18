@@ -2,6 +2,7 @@
   "name": "mcp-simplengat",
   "version": "1.0.0",
   "description": "MCP Server for SimpleNGAT API (simplengat.com) — image & video generation",
+  "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
