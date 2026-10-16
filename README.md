@@ -1,85 +1,176 @@
-# MCP Server SimpleNGAT
+# SimpleNGAT MCP
 
-MCP Server (stdio) untuk [SimpleNGAT API v1](https://simplengat.com/api-docs) — generate image & video dari Claude Code / OpenCode / custom agent.
+SimpleNGAT now provides an official hosted MCP server for Claude, ChatGPT, Cursor, Codex, Gemini CLI, VS Code, Windsurf, Antigravity, and other MCP-compatible agents.
 
-Base URL: `https://simplengat.com/api/v1` | Auth: `Bearer SIMPLENGAT_API_KEY` | Rate limit: `100 req/min`
+## Official hosted MCP — primary
 
-## 1. Setup
+**MCP URL**
 
-```bash
-cd /root/mcp-simplengat
-npm install
-cp .env.example .env
-# isi SIMPLENGAT_API_KEY (https://simplengat.com/dashboard/api-settings)
-nano .env
-npm run build
+```text
+https://simplengat.com/api/mcp
 ```
 
-## 2. Jalankan
+The hosted MCP is the production source of truth. It supports OAuth/login for interactive clients and API-key based access for agents/scripts that cannot open a browser.
+
+Unauthenticated discovery correctly advertises the OAuth protected-resource metadata for `https://simplengat.com/api/mcp`.
+
+### Official tools
+
+| Tool | Purpose |
+|---|---|
+| `list_models` | Models, supported options, and prices |
+| `get_credit_balance` | Current credits and membership |
+| `generate_image` | Generate images from text or reference images |
+| `generate_video` | Start a video generation job |
+| `upscale_video` | Upscale a generated video to 4K |
+| `generate_music` | Generate a song from a description |
+| `list_speech_voices` | Search available text-to-speech voices |
+| `generate_speech` | Generate speech audio as MP3 |
+| `get_job_status` | Poll video, upscale, or music generation jobs |
+| `list_gallery` | List recent generated images and videos |
+
+Always call `list_models` before expensive generation work when model availability, options, duration, or pricing matters.
+
+A minimal agent workflow is:
+
+```text
+list_models
+→ get_credit_balance
+→ generate_image / generate_video / generate_music / generate_speech
+→ get_job_status (for async jobs)
+→ list_gallery when recent outputs need to be recovered
+```
+
+## This repository — local/dev fallback
+
+This repository contains a local stdio MCP adapter for SimpleNGAT REST API v1 plus reusable agent workflow skills. It is useful for development, local scripting, tests, custom agents, and environments that cannot use the hosted OAuth MCP directly.
+
+It is **not** the production hosted MCP implementation and should not be deployed as a replacement for `https://simplengat.com/api/mcp`.
+
+Base REST URL: `https://simplengat.com/api/v1`
+
+### Setup local fallback
 
 ```bash
+git clone https://github.com/goldfanatictrader/mcp-simplengat.git
+cd mcp-simplengat
+npm install
+cp .env.example .env
+# Add SIMPLENGAT_API_KEY from the SimpleNGAT dashboard
+npm run build
 npm start
 ```
 
-## 3. Tools (8)
+### Local fallback tools
 
-| Tool | Endpoint | Deskripsi |
-|------|----------|-----------|
-| `simplengat_user_me` | `GET /user/me` | Info user, credits, role |
-| `simplengat_list_voices` | `GET /voices` | Daftar voice R2V |
-| `simplengat_generate_image` | `POST /generate/image` | T2I / I2I, Nano Banana Pro/2/2-Lite, 0.25 kredit/gambar, `count` 1-4, `referenceImages` max 10 |
-| `simplengat_generate_video` | `POST /generate/video` | T2V/I2V/R2V/I2V-FL, 720p=3 kredit, 1080p=5 kredit (hangus hanya jika sukses) |
-| `simplengat_video_status` | `GET /generate/video/status?jobId=` | Poll status; 1080p auto-trigger upscale |
-| `simplengat_upscale_image` | `POST /generate/image/upscale` | Upscale 2K (free) / 4K (VIP) |
-| `simplengat_delete_upscaled` | `DELETE /generate/image/upscale?url=` | Hapus file upscale sementara |
-| `simplengat_health_check` | gabungan | Deteksi outage/maintenance, lihat §6 |
+The local adapter currently exposes REST-oriented compatibility tools including:
 
-Contoh generate video:
-- T2V: `{ prompt, mode: "t2v" }`
-- I2V: `{ prompt, mode: "i2v", startImage: "https://..." }`
-- R2V: `{ prompt, mode: "r2v", referenceImages: ["https://..."], voice: "achird" }`
-- I2V-FL: `{ prompt, mode: "i2v-fl", startImage, endImage, resolution: "1080p", count: 4 }`
+- `simplengat_user_me`
+- `simplengat_list_voices`
+- `simplengat_generate_image`
+- `simplengat_generate_video`
+- `simplengat_video_status`
+- `simplengat_upscale_image`
+- `simplengat_delete_upscaled`
+- `simplengat_list_models`
+- `simplengat_motion_control`
+- `simplengat_health_check`
 
-## 4. Pakai di Claude Code / OpenCode
+For new agent workflows, prefer the official hosted tool names whenever the hosted MCP is connected.
 
-`~/.claude.json` atau `~/.config/opencode/opencode.json`:
+## Seedance and multimodal references
+
+The local fallback includes support for the newer Seedance video contract, including:
+
+- Seedance 2.5
+- Seedance 2.0
+- image references
+- video references
+- audio references
+- Seedance aspect ratios
+- duration validation
+- model discovery through `/models`
+
+Example local fallback request:
 
 ```json
 {
-  "mcp": {
-    "simplengat": {
-      "type": "local",
-      "command": ["node", "/root/mcp-simplengat/dist/index.js"],
-      "enabled": true,
-      "environment": { "SIMPLENGAT_API_KEY": "sk_..." }
-    }
-  }
+  "model": "seedance-2.5",
+  "mode": "r2v",
+  "prompt": "@Image1 performs to @Audio1...",
+  "referenceImages": ["https://..."],
+  "referenceAudios": ["https://...mp3"],
+  "aspectRatio": "16:9",
+  "quality": "1080p",
+  "duration": 15,
+  "audio": true
 }
 ```
 
-Claude Code CLI:
+Do not assume the local adapter's historical limits or pricing are authoritative. Prefer `list_models` from the official hosted MCP for current capability and pricing discovery.
 
-```bash
-claude mcp add simplengat -- node /root/mcp-simplengat/dist/index.js
+## Agent workflow skill
+
+Use:
+
+```text
+skills/simplengat-creative-engine/SKILL.md
 ```
 
-## 5. Error codes
+The skill teaches agents how to use SimpleNGAT as a headless creative-production engine, including:
 
-401 key salah/hilang, 402 kredit habis, 403 akun tanpa role API, 429 rate limit, 500 internal.
+- model discovery and budget checks
+- semantic `@references`
+- identity and continuity locks
+- music-video audio/lyrics segmentation
+- prompt compilation
+- model routing
+- paid-generation safety
+- async job polling
+- QA
+- retry/repair
+- lipsync strategy
+- timeline assembly
+- cost control
 
-## 6. Health check (outage / maintenance)
+The official hosted MCP tools are the preferred execution surface. The local adapter is a fallback.
 
-Simple prompt, hemat kredit:
+## Music-video reference workflow
 
-- `npm run health` — api + voices (GRATIS) + image 1x `nano-banana-2-lite` (~0.25 kredit)
-- `npm run health:full` — ditambah video T2V 720p submit (~3 kredit, hanya jika sukses)
-- `npm run health:poll` — full + poll status job video
+For music-video projects such as **Terbang Bersamaku**, the recommended sequence is:
 
-Via MCP: `simplengat_health_check` (`checkVideo: true` untuk ikut cek video, `pollVideo: true` untuk poll).
+```text
+list_models
+→ get_credit_balance
+→ register/prepare character references
+→ analyze song structure + lyrics
+→ split audio by phrase/model limit
+→ compile @Image / @Audio references
+→ generate_video
+→ get_job_status
+→ QA identity / hands / instruments / lipsync / continuity
+→ retry or repair only failed dimensions
+→ assemble selected clips against the original master audio
+```
 
-Output: `overall: healthy | degraded | down` + `latencyMs` per cek + klasifikasi:
-`api` gagal = kemungkinan outage/maintenance; generator gagal tapi api hidup = gangguan parsial.
+For visible singing, include the exact lyric line matching the attached audio segment. For full-band/wide shots, the master mix is usually the better performance reference. The original master song remains the authoritative final soundtrack.
 
-## 7. License
+## Health check for local fallback
 
-MIT — lihat `LICENSE`.
+```bash
+npm run health
+npm run health:full
+npm run health:poll
+```
+
+These commands exercise the REST/local adapter. They are separate from the official hosted MCP health/auth flow.
+
+## Media handling
+
+`skills/tempuploader/SKILL.md` documents the temporary image-reference uploader used by some local workflows. It is not the official SimpleNGAT MCP server and should not be confused with the hosted MCP.
+
+Avoid committing runtime media, generated project assets, `.env`, logs, local project databases, or temporary reference files to this repository.
+
+## License
+
+MIT — see `LICENSE`.

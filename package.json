@@ -1,7 +1,7 @@
 {
   "name": "mcp-simplengat",
-  "version": "1.0.0",
-  "description": "MCP Server for SimpleNGAT API (simplengat.com) — image & video generation",
+  "version": "1.1.0",
+  "description": "MCP Server for SimpleNGAT API — multimodal image/video generation with Seedance, model discovery, motion control, and creative workflow skills",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.js",

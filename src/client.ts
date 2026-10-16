@@ -46,6 +46,9 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 export const simplengat = {
   userMe: () => request("/user/me"),
   listVoices: () => request("/voices"),
+  listModels: () => request("/models"),
+  motionControl: (body: Record<string, unknown>) =>
+    request("/generate/video/motion-control", { method: "POST", body: JSON.stringify(body) }),
   generateImage: (body: Record<string, unknown>) =>
     request("/generate/image", { method: "POST", body: JSON.stringify(body) }),
   generateVideo: (body: Record<string, unknown>) =>

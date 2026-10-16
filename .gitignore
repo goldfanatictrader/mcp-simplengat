@@ -2,3 +2,8 @@ node_modules/
 dist/
 .env
 *.log
+*.bak*
+projects/
+media/
+viewer-public/
+*.b64
